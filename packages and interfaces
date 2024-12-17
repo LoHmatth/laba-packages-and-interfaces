@@ -1,0 +1,211 @@
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+// Класс продукта
+class Product {
+    private String name;
+    private String category;
+    private double price;
+    private String manufacturer;
+    private int soldUnits;
+
+    public Product(String name, String category, double price, String manufacturer, int soldUnits) {
+        this.name = name;
+        this.category = category;
+        this.price = price;
+        this.manufacturer = manufacturer;
+        this.soldUnits = soldUnits;
+    }
+
+    // Геттеры и сеттеры
+    public String getName() {
+        return name;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public String getManufacturer() {
+        return manufacturer;
+    }
+
+    public int getSoldUnits() {
+        return soldUnits;
+    }
+
+    public void setSoldUnits(int soldUnits) {
+        this.soldUnits = soldUnits;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Product{name='%s', category='%s', price=%.2f, manufacturer='%s', soldUnits=%d}",
+                name, category, price, manufacturer, soldUnits);
+    }
+}
+
+// Класс промокода
+class PromoCode {
+    private String code;
+    private double discountPercent;
+    private LocalDateTime expiryDate;
+    private String applicableCategory; // null, если промокод действует на все товары
+
+    public PromoCode(String code, double discountPercent, LocalDateTime expiryDate, String applicableCategory) {
+        this.code = code;
+        this.discountPercent = discountPercent;
+        this.expiryDate = expiryDate;
+        this.applicableCategory = applicableCategory;
+    }
+
+    // Проверка действительности промокода
+    public boolean isValid() {
+        return LocalDateTime.now().isBefore(expiryDate);
+    }
+
+    public double getDiscountPercent() {
+        return discountPercent;
+    }
+
+    public String getApplicableCategory() {
+        return applicableCategory;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("PromoCode{code='%s', discountPercent=%.2f, expiryDate=%s, applicableCategory='%s'}",
+                code, discountPercent, expiryDate, applicableCategory);
+    }
+}
+
+// Класс заказа
+class Order {
+    private List<Product> products;
+    private LocalDateTime date;
+    private double totalCost;
+
+    public Order(List<Product> products, double totalCost) {
+        this.products = new ArrayList<>(products);
+        this.date = LocalDateTime.now();
+        this.totalCost = totalCost;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public double getTotalCost() {
+        return totalCost;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Order{products=%s, date=%s, totalCost=%.2f}", products, date, totalCost);
+    }
+}
+
+// Класс покупателя
+class Customer {
+    private String phoneNumber;
+    private List<Order> orders;
+
+    public Customer(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+        this.orders = new ArrayList<>();
+    }
+
+    public void addOrder(Order order) {
+        orders.add(order);
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Customer{phoneNumber='%s', orders=%s}", phoneNumber, orders);
+    }
+}
+
+// Основной класс интернет-магазина
+class Store {
+    private List<Product> catalog = new ArrayList<>();
+    private List<PromoCode> promoCodes = new ArrayList<>();
+    private List<Customer> customers = new ArrayList<>();
+
+    // Добавление продукта в каталог
+    public void addProduct(Product product) {
+        catalog.add(product);
+    }
+
+    // Поиск по параметрам
+    public List<Product> searchByName(String name) {
+        return catalog.stream().filter(p -> p.getName().equalsIgnoreCase(name)).collect(Collectors.toList());
+    }
+
+    public List<Product> searchByCategory(String category) {
+        return catalog.stream().filter(p -> p.getCategory().equalsIgnoreCase(category)).collect(Collectors.toList());
+    }
+
+    public List<Product> searchByPriceRange(double minPrice, double maxPrice) {
+        return catalog.stream().filter(p -> p.getPrice() >= minPrice && p.getPrice() <= maxPrice).collect(Collectors.toList());
+    }
+
+    public List<Product> searchByManufacturer(String manufacturer) {
+        return catalog.stream().filter(p -> p.getManufacturer().equalsIgnoreCase(manufacturer)).collect(Collectors.toList());
+    }
+
+    // Сортировка
+    public List<Product> sortByPrice() {
+        return catalog.stream().sorted(Comparator.comparingDouble(Product::getPrice)).collect(Collectors.toList());
+    }
+
+    public List<Product> sortBySoldUnits() {
+        return catalog.stream().sorted(Comparator.comparingInt(Product::getSoldUnits).reversed()).collect(Collectors.toList());
+    }
+
+    // Создание заказа
+    public Order createOrder(Customer customer, List<Product> products, PromoCode promoCode) {
+        double totalCost = 0.0;
+        for (Product product : products) {
+            double discount = 0.0;
+            if (promoCode != null && promoCode.isValid()) {
+                if (promoCode.getApplicableCategory() == null || promoCode.getApplicableCategory().equals(product.getCategory())) {
+                    discount = product.getPrice() * promoCode.getDiscountPercent() / 100;
+                }
+            }
+            totalCost += product.getPrice() - discount;
+        }
+
+        Order order = new Order(products, totalCost);
+        customer.addOrder(order);
+        return order;
+    }
+
+    public void addPromoCode(PromoCode promoCode) {
+        promoCodes.add(promoCode);
+    }
+
+    public List<PromoCode> getPromoCodes() {
+        return promoCodes;
+    }
+
+    public void addCustomer(Customer customer) {
+        customers.add(customer);
+    }
+
+    public List<Customer> getCustomers() {
+        return customers;
+    }
+}
